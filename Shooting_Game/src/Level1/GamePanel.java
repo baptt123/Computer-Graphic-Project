@@ -1,6 +1,6 @@
-// GamePanel.java
 package Level1;
 
+import Level2.BossPanel;
 import javax.imageio.ImageIO;
 import javax.swing.*;
 import java.awt.*;
@@ -16,8 +16,9 @@ public class GamePanel extends JPanel implements Runnable, KeyListener {
     public static final int HEIGHT = 600;
     public static final int TILE = 16 * 4;
 
-    private Stage stage = Stage.PLAY;
     private boolean gameOver = false;
+    private boolean gameWon = false;  // Thêm biến này để kiểm tra người chơi thắng
+    private boolean paused = false;  // Thêm biến này để kiểm tra trò chơi có bị tạm dừng không
     private Random random = new Random();
 
     private BufferedImage backgroundImg;
@@ -36,12 +37,11 @@ public class GamePanel extends JPanel implements Runnable, KeyListener {
     private Thread thread;
 
     public GamePanel() {
-        // Load images and initialize game
         try {
-            backgroundImg = ImageIO.read(new FileInputStream("D:\\Computer_Graphics_Project\\Shooting_Game\\img\\background.jpg"));
-            bulletImg = ImageIO.read(new FileInputStream("D:\\Computer_Graphics_Project\\Shooting_Game\\img\\fireball.png"));
+            backgroundImg = ImageIO.read(new FileInputStream("D:\\Computer-Graphic-Project\\Shooting_Game\\img\\background.jpg"));
+            bulletImg = ImageIO.read(new FileInputStream("D:\\Computer-Graphic-Project\\Shooting_Game\\img\\fireball.png"));
             bulletImg = makeTransparent(bulletImg, Color.WHITE);
-            enemyImg = ImageIO.read(new FileInputStream("D:\\Computer_Graphics_Project\\Shooting_Game\\img\\flying_twin_headed_dragon_blue.png"));
+            enemyImg = ImageIO.read(new FileInputStream("D:\\Computer-Graphic-Project\\Shooting_Game\\img\\flying_twin_headed_dragon_blue.png"));
             enemyImg = makeTransparent(enemyImg, Color.WHITE);
         } catch (Exception e) {
             e.printStackTrace();
@@ -61,7 +61,6 @@ public class GamePanel extends JPanel implements Runnable, KeyListener {
             enemy.get(i).vy = 2;
         }
 
-        // Initialize dragon animation
         dragonAnimation = new DragonAnimation();
 
         thread = new Thread(this);
@@ -89,6 +88,8 @@ public class GamePanel extends JPanel implements Runnable, KeyListener {
     }
 
     public void update() {
+        if (paused) return; // Nếu trò chơi đang tạm dừng thì không cập nhật gì cả.
+
         enemyCount++;
         if (move == 1) player.x += player.vx;
         else if (move == -1) player.x -= player.vx;
@@ -100,6 +101,13 @@ public class GamePanel extends JPanel implements Runnable, KeyListener {
             playerHealth = 0;
             gameOver = true;
         }
+
+        // Kiểm tra nếu đạt 20 điểm
+        if (playerScore >= 20) {
+            gameWon = true;
+            return;
+        }
+
         if (enemyCount % 1000 == 0) {
             enemyLength++;
             Item newEnemy = new Item();
@@ -147,7 +155,7 @@ public class GamePanel extends JPanel implements Runnable, KeyListener {
             delta += (now - lastTime) / ns;
             lastTime = now;
             if (delta >= 1) {
-                if (!gameOver && stage == Stage.PLAY) {
+                if (!gameOver && !gameWon) {
                     update();
                 }
                 repaint();
@@ -161,7 +169,7 @@ public class GamePanel extends JPanel implements Runnable, KeyListener {
         super.paintComponent(g);
         g.drawImage(backgroundImg, -50, -30, null);
         if (shoot == 1) g.drawImage(bulletImg, bullet.x, bullet.y, TILE, TILE, null);
-        if (!gameOver) dragonAnimation.drawDragon(g, player.x, player.y);
+        if (!gameOver && !gameWon && !paused) dragonAnimation.drawDragon(g, player.x, player.y);
         for (Item enemy : enemy) {
             g.drawImage(enemyImg, enemy.x, enemy.y, TILE, TILE, null);
         }
@@ -169,10 +177,25 @@ public class GamePanel extends JPanel implements Runnable, KeyListener {
         g.setFont(new Font("Arial", Font.PLAIN, 35));
         g.drawString("SCORE  " + playerScore, 5, 40);
         g.drawString("HEALTH " + playerHealth, 5, 85);
+
         if (gameOver) {
             g.setColor(Color.RED);
             g.setFont(new Font("Arial", Font.BOLD, 55));
             g.drawString("GAME OVER", WIDTH / 2 - 130, HEIGHT / 2);
+        }
+
+        if (gameWon) {
+            g.setColor(Color.GREEN);
+            g.setFont(new Font("Arial", Font.BOLD, 55));
+            g.drawString("YOU WIN!", WIDTH / 2 - 120, HEIGHT / 2);
+            g.setFont(new Font("Arial", Font.PLAIN, 30));
+            g.drawString("Press ENTER to continue to Level 2", WIDTH / 2 - 170, HEIGHT / 2 + 50);
+        }
+
+        if (paused) {
+            g.setColor(Color.YELLOW);
+            g.setFont(new Font("Arial", Font.BOLD, 55));
+            g.drawString("PAUSED", WIDTH / 2 - 120, HEIGHT / 2);
         }
     }
 
@@ -193,11 +216,20 @@ public class GamePanel extends JPanel implements Runnable, KeyListener {
                 }
                 break;
             case KeyEvent.VK_ENTER:
-                if (stage == Stage.PAUSE) {
-                    stage = Stage.PLAY;
-                } else {
-                    stage = Stage.PAUSE;
+                if (gameWon) {
+                    // Chuyển sang BossPanel khi nhấn Enter
+                    JFrame topFrame = (JFrame) SwingUtilities.getWindowAncestor(this);
+                    topFrame.remove(this);
+                    BossPanel bossPanel = new BossPanel();
+                    topFrame.add(bossPanel);
+                    bossPanel.requestFocusInWindow();
+                    topFrame.revalidate();
+                    topFrame.repaint();
+                    thread = null;
                 }
+                break;
+            case KeyEvent.VK_P:
+                paused = !paused; // Toggle paused state
                 break;
         }
     }
