@@ -6,17 +6,17 @@ import java.awt.event.*;
 import java.awt.geom.AffineTransform;
 import java.awt.image.*;
 import javax.imageio.*;
-import java.io.File;
 import java.io.FileInputStream;
 import java.util.ArrayList;
 import java.util.Random;
 
-class GamePanel extends JPanel implements Runnable, KeyListener {
+public class BossPanel extends JPanel implements Runnable, KeyListener {
     public static final int WIDTH = 800;
     public static final int HEIGHT = 600;
     public static final int TILE = 16 * 4;
     private Stage stage = Stage.PLAY;
     private boolean gameOver = false;
+    private boolean paused = false;
     private Random random = new Random();
 
     private BufferedImage backgroundImg;
@@ -34,18 +34,18 @@ class GamePanel extends JPanel implements Runnable, KeyListener {
 
     private Thread thread;
 
-    public GamePanel() {
+    public BossPanel() {
         // Load images and initialize game
         try {
-            backgroundImg = ImageIO.read(new FileInputStream("D:\\Computer_Graphics_Project\\Shooting_Game\\img\\background.jpg"));
+            backgroundImg = ImageIO.read(new FileInputStream("D:\\Computer-Graphic-Project\\Shooting_Game\\img\\background.jpg"));
 
             // Load and remove white background from fireball image
-            BufferedImage fireballImage = ImageIO.read(new FileInputStream("D:\\Computer_Graphics_Project\\Shooting_Game\\img\\fireball.png"));
+            BufferedImage fireballImage = ImageIO.read(new FileInputStream("D:\\Computer-Graphic-Project\\Shooting_Game\\img\\fireball.png"));
             bulletImg = ImageUtils.removeWhiteBackground(fireballImage);
 
             // Read enemy image and remove white background
-            BufferedImage enemyImage = ImageIO.read(new FileInputStream("D:\\Computer_Graphics_Project\\Shooting_Game\\img\\flying_twin_headed_dragon_blue.png"));
-            enemyImg = ImageUtils.removeWhiteBackground(enemyImage); // Remove white background
+            BufferedImage enemyImage = ImageIO.read(new FileInputStream("D:\\Computer-Graphic-Project\\Shooting_Game\\img\\flying_twin_headed_dragon_blue.png"));
+            enemyImg = ImageUtils.removeWhiteBackground(enemyImage);
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -62,7 +62,8 @@ class GamePanel extends JPanel implements Runnable, KeyListener {
         boss = new Item();
         boss.x = WIDTH / 2 - TILE / 2;
         boss.y = 0;
-        boss.vy = 3; // Boss will move vertically at a certain speed
+        boss.vx = 0; // Initial horizontal velocity
+        boss.vy = 0; // Initial vertical velocity
 
         // Initialize dragon animation
         dragonAnimation = new DragonAnimation();
@@ -77,20 +78,28 @@ class GamePanel extends JPanel implements Runnable, KeyListener {
     }
 
     public void update() {
+        if (paused) return;
+
         // Update player position
         if (move == 1) player.x += player.vx;
         else if (move == -1) player.x -= player.vx;
 
-        // Update boss movement
+        // Update boss random movement
+        if (random.nextInt(100) < 2) { // Randomly change direction every few frames
+            boss.vx = random.nextInt(7) - 3; // Random vx between -3 and 3
+            boss.vy = random.nextInt(7) - 3; // Random vy between -3 and 3
+        }
+
         boss.x += boss.vx;
         boss.y += boss.vy;
 
+        // Keep boss within bounds
         if (boss.x <= 0 || boss.x >= WIDTH - TILE) {
-            boss.vx = -boss.vx; // Reverse direction horizontally
+            boss.vx = -boss.vx;
         }
 
-        if (boss.y <= 0 || boss.y >= HEIGHT / 2) {
-            boss.vy = -boss.vy; // Reverse direction vertically
+        if (boss.y <= 0 || boss.y >= HEIGHT - TILE) {
+            boss.vy = -boss.vy;
         }
 
         // Shoot fireball from boss every random interval
@@ -161,8 +170,6 @@ class GamePanel extends JPanel implements Runnable, KeyListener {
         }
     }
 
-
-
     @Override
     public void paintComponent(Graphics g) {
         super.paintComponent(g);
@@ -174,16 +181,14 @@ class GamePanel extends JPanel implements Runnable, KeyListener {
         // Vẽ các đạn lửa
         for (Projectile p : projectiles) {
             if (p.isPlayer) {
-                // Đạn của người chơi giữ nguyên hướng và kích thước
                 g2d.drawImage(bulletImg, p.x, p.y, TILE, TILE, null);
             } else {
-                // Đạn của kẻ địch lật ngược hình ảnh và có cùng kích thước với người chơi
+                // Draw boss fireballs reversed
                 AffineTransform tx = new AffineTransform();
-                // Dịch chuyển hình ảnh theo vị trí của đạn và giữ nguyên kích thước TILE x TILE
                 tx.translate(p.x, p.y + TILE);
-                tx.scale(1, -1);  // Lật ngược theo trục Y
-                tx.translate(0, -TILE);  // Dịch ngược lại để giữ nguyên vị trí ban đầu
-                g2d.drawImage(bulletImg, tx,null); // Giữ nguyên kích thước TILE x TILE
+                tx.scale(1, -1);
+                tx.translate(0, -TILE);
+                g2d.drawImage(bulletImg, tx, null);
             }
         }
 
@@ -210,8 +215,14 @@ class GamePanel extends JPanel implements Runnable, KeyListener {
                 g.drawString("GAME OVER", WIDTH / 2 - 130, HEIGHT / 2);
             }
         }
-    }
 
+        // Hiển thị thông báo tạm dừng
+        if (paused) {
+            g.setColor(Color.YELLOW);
+            g.setFont(new Font("Arial", Font.BOLD, 40));
+            g.drawString("TẠM DỪNG, ẤN PHÍM P ĐỂ TIẾP TỤC", WIDTH / 2 - 270, HEIGHT / 2);
+        }
+    }
 
     @Override
     public void keyPressed(KeyEvent e) {
@@ -226,7 +237,15 @@ class GamePanel extends JPanel implements Runnable, KeyListener {
                 shoot = 1;
                 break;
             case KeyEvent.VK_P:
-                resetGame();
+                paused = !paused; // Toggle pause state
+                break;
+            case KeyEvent.VK_ENTER:
+                resetGame(); // Reset game when 'Enter' is pressed
+                break;
+            case KeyEvent.VK_ESCAPE:
+                if (gameOver) {
+                    System.exit(0); // Exit the game if 'You Win' message is shown
+                }
                 break;
         }
     }
@@ -236,8 +255,11 @@ class GamePanel extends JPanel implements Runnable, KeyListener {
         bossHealth = 100;
         projectiles.clear();
         player.x = WIDTH / 2 - TILE / 2;
+        player.y = HEIGHT - 90;
         boss.x = WIDTH / 2 - TILE / 2;
         boss.y = 0;
+        boss.vx = 0;
+        boss.vy = 0;
         gameOver = false;
         stage = Stage.PLAY;
     }
