@@ -25,7 +25,7 @@ public class DragonAnimation {
     private void loadImage() {
         try {
             // Tải sprite sheet từ file
-            dragonSpriteSheet = ImageIO.read(new File("D:\\Computer-Graphic-Project\\Shooting_Game\\img\\dragon.png"));
+            dragonSpriteSheet = ImageIO.read(new File("img/dragon.png"));
             // Xóa nền trắng (thay bằng trong suốt)
             dragonSpriteSheet = removeWhiteDragonBackground(dragonSpriteSheet);
         } catch (Exception e) {

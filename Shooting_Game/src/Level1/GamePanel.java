@@ -38,10 +38,10 @@ public class GamePanel extends JPanel implements Runnable, KeyListener {
 
     public GamePanel() {
         try {
-            backgroundImg = ImageIO.read(new FileInputStream("D:\\Computer-Graphic-Project\\Shooting_Game\\img\\background.jpg"));
-            bulletImg = ImageIO.read(new FileInputStream("D:\\Computer-Graphic-Project\\Shooting_Game\\img\\fireball.png"));
+            backgroundImg = ImageIO.read(new FileInputStream("img/background.jpg"));
+            bulletImg = ImageIO.read(new FileInputStream("img/fireball.png"));
             bulletImg = makeTransparent(bulletImg, Color.WHITE);
-            enemyImg = ImageIO.read(new FileInputStream("D:\\Computer-Graphic-Project\\Shooting_Game\\img\\flying_twin_headed_dragon_blue.png"));
+            enemyImg = ImageIO.read(new FileInputStream("img/flying_twin_headed_dragon_blue.png"));
             enemyImg = makeTransparent(enemyImg, Color.WHITE);
         } catch (Exception e) {
             e.printStackTrace();
