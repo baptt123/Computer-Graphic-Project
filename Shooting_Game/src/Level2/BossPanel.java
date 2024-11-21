@@ -37,14 +37,14 @@ public class BossPanel extends JPanel implements Runnable, KeyListener {
     public BossPanel() {
         // Load images and initialize game
         try {
-            backgroundImg = ImageIO.read(new FileInputStream("D:\\Computer-Graphic-Project\\Shooting_Game\\img\\background.jpg"));
+            backgroundImg = ImageIO.read(new FileInputStream("img/background.jpg"));
 
             // Load and remove white background from fireball image
-            BufferedImage fireballImage = ImageIO.read(new FileInputStream("D:\\Computer-Graphic-Project\\Shooting_Game\\img\\fireball.png"));
+            BufferedImage fireballImage = ImageIO.read(new FileInputStream("img/fireball.png"));
             bulletImg = ImageUtils.removeWhiteBackground(fireballImage);
 
             // Read enemy image and remove white background
-            BufferedImage enemyImage = ImageIO.read(new FileInputStream("D:\\Computer-Graphic-Project\\Shooting_Game\\img\\flying_twin_headed_dragon_blue.png"));
+            BufferedImage enemyImage = ImageIO.read(new FileInputStream("img/flying_twin_headed_dragon_blue.png"));
             enemyImg = ImageUtils.removeWhiteBackground(enemyImage);
 
         } catch (Exception e) {
