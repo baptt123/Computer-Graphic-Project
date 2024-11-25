@@ -102,7 +102,7 @@ public class GamePanel extends JPanel implements Runnable, KeyListener {
             gameOver = true;
         }
 
-        // Kiểm tra nếu đạt 20 điểm
+        // Kiểm tra nếu đạt 5 điểm
         if (playerScore >= 5) {
             gameWon = true;
             return;
